@@ -34,16 +34,31 @@ var dataController = (function () {
         }
 
         data.storage[type];
-        data.storage[type].push(type === 'inc' ? new Income(id, dataItem.description, dataItem.value) : new Expense(id, dataItem.description, dataItem.value));
+        var dataItem;
+        if (type === 'inc') {
+            dataItem = new Income(id, dataItem.description, dataItem.value);
+        } else {
+            dataItem = new Expense(id, dataItem.description, dataItem.value);
+        }
+        data.storage[type].push(dataItem);
 
+        return dataItem;
     }
 
     return {
         addDataItem: function (dataItem) {
-            addItem(dataItem);
+            return addItem(dataItem);
         },
+        removeDataItem: function (type, id) {
+            var ids = data.storage[type].map(function (current) {
+                return current.id;
+            })
+            var index = ids.indexOf(id);
+            data.storage[type].splice(index, 1);
+        },
+
         calculateBudget: function () {
-            var incTotal, expTotal;
+            var incTotal, expTotal, percentage;
             incTotal = 0;
             data.storage.inc.forEach(function (inc) {
                 incTotal += inc.value;
@@ -56,12 +71,17 @@ var dataController = (function () {
 
             data.totals.inc = incTotal;
             data.totals.exp = expTotal;
+            if (incTotal > 0) {
+                Math.floor((expTotal / incTotal * 100))
+            } else {
+                percentage = -1;
+            }
 
             return {
                 budget: (incTotal - expTotal),
                 income: incTotal,
                 expnses: expTotal,
-                expensesPercentage: (expTotal / incTotal * 100)
+                expensesPercentage: percentage
             }
         },
         testing: function () {
@@ -86,18 +106,18 @@ var uiController = (function () {
         budgetExpensesPercentageLable: '.budget__expenses--percentage',
 
     }
-    var displayItem = function (dataItem) {
+    var displayItem = function (type, dataItem) {
         var html, element;
 
-        if (dataItem.type === 'inc') {
-            html = ' <div class="item clearfix" id="income-0"><div class="item__description">%desc%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+        if (type === 'inc') {
+            html = ' <div class="item clearfix" id="inc-%id%"><div class="item__description">%desc%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
             element = document.querySelector(DOMConstants.incomeList);
         } else {
-            html = '<div class="item clearfix" id="expense-0"><div class="item__description">%desc%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+            html = '<div class="item clearfix" id="exp-%id%"><div class="item__description">%desc%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
             element = document.querySelector(DOMConstants.expenseList);
         }
 
-        html = html.replace("%value%", dataItem.value).replace("%desc%", dataItem.description);
+        html = html.replace("%value%", dataItem.value).replace("%desc%", dataItem.description).replace("%id%", dataItem.id)
         element.insertAdjacentHTML('beforeend', html);
     }
     return {
@@ -109,8 +129,8 @@ var uiController = (function () {
                 value: parseFloat(document.querySelector(DOMConstants.value).value),
             }
         },
-        addDisplayItem: function (dataItem) {
-            displayItem(dataItem);
+        addDisplayItem: function (type, dataItem) {
+            displayItem(type, dataItem);
         },
         resetInputSection: function () {
             document.querySelector(DOMConstants.desc).focus();
@@ -149,8 +169,23 @@ var appController = (function (dataController, uiController) {
             if (event.keyCode === 13 || event.which === 13) {
                 addNewEntry();
             }
-        })
+        });
+        document.addEventListener('click', cntrlDelete);
 
+    }
+
+    var cntrlDelete = function (event) {
+
+        //console.log(event.target)
+        if (event.target.className === "ion-ios-close-outline") {
+            var el = event.target.parentNode.parentNode.parentNode.parentNode;
+            el.parentNode.removeChild(el);
+
+            var splitId = el.id.split("-");
+            dataController.removeDataItem(splitId[0], splitId[1]);
+            var budget = dataController.calculateBudget();
+            uiController.updateBudget(budget);
+        }
     }
 
     var addNewEntry = function () {
@@ -159,13 +194,13 @@ var appController = (function (dataController, uiController) {
 
         if (input.description != "" && input.value > 0) {
             // save in data controller
-            dataController.addDataItem(input);
+            var dataItem = dataController.addDataItem(input);
 
             //reset input view
             uiController.resetInputSection();
 
             // Add item on UI
-            uiController.addDisplayItem(input);
+            uiController.addDisplayItem(input.type, dataItem);
 
             // update budget
             var budget = dataController.calculateBudget();
