@@ -46,16 +46,23 @@ var dataController = (function () {
             var incTotal, expTotal;
             incTotal = 0;
             data.storage.inc.forEach(function (inc) {
-                incTotal += inc;
+                incTotal += inc.value;
             });
 
             expTotal = 0;
             data.storage.exp.forEach(function (exp) {
-                expTotal += exp;
+                expTotal += exp.value;
             });
 
             data.totals.inc = incTotal;
             data.totals.exp = expTotal;
+
+            return {
+                budget: (incTotal - expTotal),
+                income: incTotal,
+                expnses: expTotal,
+                expensesPercentage: (expTotal / incTotal * 100)
+            }
         },
         testing: function () {
             console.log(data);
@@ -115,7 +122,13 @@ var uiController = (function () {
             document.querySelector(DOMConstants.budgetIncomeLable).textContent = 0;
             document.querySelector(DOMConstants.budgetExpenseLable).textContent = 0;
             document.querySelector(DOMConstants.budgetExpensesPercentageLable).textContent = 0;
-        }
+        },
+        updateBudget: function (budget) {
+            document.querySelector(DOMConstants.budgetLable).textContent = budget.budget;
+            document.querySelector(DOMConstants.budgetIncomeLable).textContent = budget.income;
+            document.querySelector(DOMConstants.budgetExpenseLable).textContent = budget.expnses;
+            document.querySelector(DOMConstants.budgetExpensesPercentageLable).textContent = budget.expensesPercentage;
+        },
 
     }
 })();
@@ -151,11 +164,14 @@ var appController = (function (dataController, uiController) {
             //reset input view
             uiController.resetInputSection();
 
-            // display in UI controller
+            // Add item on UI
             uiController.addDisplayItem(input);
 
             // update budget
-            dataController.calculateBudget();
+            var budget = dataController.calculateBudget();
+
+            //Update budget on UI
+            uiController.updateBudget(budget);
         }
     }
 
