@@ -53,7 +53,7 @@ var dataController = (function () {
             var ids = data.storage[type].map(function (current) {
                 return current.id;
             })
-            var index = ids.indexOf(id);
+            var index = parseInt(ids.indexOf(parseInt(id)));
             data.storage[type].splice(index, 1);
         },
 
@@ -72,7 +72,7 @@ var dataController = (function () {
             data.totals.inc = incTotal;
             data.totals.exp = expTotal;
             if (incTotal > 0) {
-                Math.floor((expTotal / incTotal * 100))
+                percentage = Math.floor((expTotal / incTotal * 100))
             } else {
                 percentage = -1;
             }
@@ -137,17 +137,15 @@ var uiController = (function () {
             document.querySelector(DOMConstants.desc).value = "";
             document.querySelector(DOMConstants.value).value = "";
         },
-        clearBuget: function () {
-            document.querySelector(DOMConstants.budgetLable).textContent = 0;
-            document.querySelector(DOMConstants.budgetIncomeLable).textContent = 0;
-            document.querySelector(DOMConstants.budgetExpenseLable).textContent = 0;
-            document.querySelector(DOMConstants.budgetExpensesPercentageLable).textContent = 0;
-        },
         updateBudget: function (budget) {
             document.querySelector(DOMConstants.budgetLable).textContent = budget.budget;
             document.querySelector(DOMConstants.budgetIncomeLable).textContent = budget.income;
             document.querySelector(DOMConstants.budgetExpenseLable).textContent = budget.expnses;
-            document.querySelector(DOMConstants.budgetExpensesPercentageLable).textContent = budget.expensesPercentage;
+            if (budget.expensesPercentage === -1) {
+                document.querySelector(DOMConstants.budgetExpensesPercentageLable).textContent = "---";
+            } else {
+                document.querySelector(DOMConstants.budgetExpensesPercentageLable).textContent = budget.expensesPercentage + " %";
+            }
         },
 
     }
@@ -159,7 +157,12 @@ var appController = (function (dataController, uiController) {
     var appInit = function () {
         console.log('Application Initalized');
         addEventHandlers();
-        uiController.clearBuget();
+        uiController.updateBudget({
+            budget: 0,
+            income: 0,
+            expnses: 0,
+            expensesPercentage: -1
+        });
     }
     var addEventHandlers = function () {
 
