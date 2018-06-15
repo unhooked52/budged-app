@@ -1,6 +1,4 @@
 var dataController = (function () {
-
-
     var data = {
         storage: {
             inc: [],
@@ -11,14 +9,11 @@ var dataController = (function () {
             exp: 0
         }
     }
-
     var Income = function (id, description, value) {
         this.id = id;
         this.description = description;
         this.value = value;
-
     }
-
     var Expense = function (id, description, value) {
         this.id = id;
         this.description = description;
@@ -32,7 +27,6 @@ var dataController = (function () {
         } else {
             id = 0;
         }
-
         data.storage[type];
         var dataItem;
         if (type === 'inc') {
@@ -41,10 +35,8 @@ var dataController = (function () {
             dataItem = new Expense(id, dataItem.description, dataItem.value);
         }
         data.storage[type].push(dataItem);
-
         return dataItem;
     }
-
     return {
         addDataItem: function (dataItem) {
             return addItem(dataItem);
@@ -56,19 +48,16 @@ var dataController = (function () {
             var index = parseInt(ids.indexOf(parseInt(id)));
             data.storage[type].splice(index, 1);
         },
-
         calculateBudget: function () {
             var incTotal, expTotal, percentage;
             incTotal = 0;
             data.storage.inc.forEach(function (inc) {
                 incTotal += inc.value;
             });
-
             expTotal = 0;
             data.storage.exp.forEach(function (exp) {
                 expTotal += exp.value;
             });
-
             data.totals.inc = incTotal;
             data.totals.exp = expTotal;
             if (incTotal > 0) {
@@ -76,7 +65,6 @@ var dataController = (function () {
             } else {
                 percentage = -1;
             }
-
             return {
                 budget: (incTotal - expTotal),
                 income: incTotal,
@@ -89,10 +77,7 @@ var dataController = (function () {
         }
     }
 })();
-
 var uiController = (function () {
-
-
     var DOMConstants = {
         addButton: '.add__btn',
         type: '.add__type',
@@ -104,11 +89,10 @@ var uiController = (function () {
         budgetIncomeLable: '.budget__income--value',
         budgetExpenseLable: '.budget__expenses--value',
         budgetExpensesPercentageLable: '.budget__expenses--percentage',
-
+        typeLabel: '.add__type'
     }
     var displayItem = function (type, dataItem) {
         var html, element;
-
         if (type === 'inc') {
             html = ' <div class="item clearfix" id="inc-%id%"><div class="item__description">%desc%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
             element = document.querySelector(DOMConstants.incomeList);
@@ -116,7 +100,6 @@ var uiController = (function () {
             html = '<div class="item clearfix" id="exp-%id%"><div class="item__description">%desc%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
             element = document.querySelector(DOMConstants.expenseList);
         }
-
         html = html.replace("%value%", dataItem.value).replace("%desc%", dataItem.description).replace("%id%", dataItem.id)
         element.insertAdjacentHTML('beforeend', html);
     }
@@ -147,13 +130,9 @@ var uiController = (function () {
                 document.querySelector(DOMConstants.budgetExpensesPercentageLable).textContent = budget.expensesPercentage + " %";
             }
         },
-
     }
 })();
-
-
 var appController = (function (dataController, uiController) {
-
     var appInit = function () {
         console.log('Application Initalized');
         addEventHandlers();
@@ -165,7 +144,6 @@ var appController = (function (dataController, uiController) {
         });
     }
     var addEventHandlers = function () {
-
         var DOMStrings = uiController.DOMStrings;
         document.querySelector(DOMStrings.addButton).addEventListener('click', addNewEntry);
         document.addEventListener('keypress', function (event) {
@@ -174,45 +152,47 @@ var appController = (function (dataController, uiController) {
             }
         });
         document.addEventListener('click', cntrlDelete);
-
+        document.querySelector(DOMStrings.typeLabel).addEventListener('change', function () {
+            var domNodes = document.querySelectorAll(DOMStrings.value + "," + DOMStrings.desc + "," + DOMStrings.typeLabel);
+            nodesForEach(domNodes, function (current) {
+                current.classList.toggle('red-focus');
+            });
+            document.querySelector(DOMStrings.addButton).classList.toggle("red");
+        })
     }
-
     var cntrlDelete = function (event) {
-
         //console.log(event.target)
         if (event.target.className === "ion-ios-close-outline") {
             var el = event.target.parentNode.parentNode.parentNode.parentNode;
             el.parentNode.removeChild(el);
-
             var splitId = el.id.split("-");
             dataController.removeDataItem(splitId[0], splitId[1]);
             var budget = dataController.calculateBudget();
             uiController.updateBudget(budget);
         }
     }
-
     var addNewEntry = function () {
         // get input from UI
         var input = uiController.getInput();
-
         if (input.description != "" && input.value > 0) {
             // save in data controller
             var dataItem = dataController.addDataItem(input);
-
             //reset input view
             uiController.resetInputSection();
-
             // Add item on UI
             uiController.addDisplayItem(input.type, dataItem);
-
             // update budget
             var budget = dataController.calculateBudget();
-
             //Update budget on UI
             uiController.updateBudget(budget);
         }
     }
 
+    var nodesForEach = function (list, callback) {
+        for (var i = 0; i < list.length; i++) {
+            callback(list[i], i, list)
+        }
+    }
     return {
         init: function () {
             appInit();
